@@ -8,11 +8,8 @@ from termcolor import colored
 from datetime import datetime
 import shutil
 
-# source for the infinite descent book: https://infinitedescent.xyz/dl/infdesc.pdf
-
 # Configuration Constants
-# PDF_NAME = "meditations.pdf"
-PDF_NAME = "infinite_math.pdf"
+PDF_NAME = "meditations.pdf"
 BASE_DIR = Path("book_analysis")
 PDF_DIR = BASE_DIR / "pdfs"
 KNOWLEDGE_DIR = BASE_DIR / "knowledge_bases"
@@ -41,12 +38,12 @@ def load_or_create_knowledge_base() -> Dict[str, Any]:
 
 def save_knowledge_base(knowledge_base: list[str]):
     output_path = BOOK_KNOWLEDGE_DIR / f"{BOOK_NAME}_knowledge.json"
-    print(colored(f" Saving knowledge base ({len(knowledge_base)} items)...", "blue"))
+    print(colored(f"Saving knowledge base ({len(knowledge_base)} items)...", "blue"))
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump({"knowledge": knowledge_base}, f, indent=2)
 
 def process_page(client: OpenAI, page_text: str, current_knowledge: list[str], page_num: int) -> list[str]:
-    print(colored(f"\n Processing page {page_num + 1}...", "yellow"))
+    print(colored(f"\nProcessing page {page_num + 1}...", "yellow"))
     
     completion = client.beta.chat.completions.parse(
         model=MODEL,
@@ -90,9 +87,9 @@ def process_page(client: OpenAI, page_text: str, current_knowledge: list[str], p
     
     result = completion.choices[0].message.parsed
     if result.has_content:
-        print(colored(f" Found {len(result.knowledge)} new knowledge points", "green"))
+        print(colored(f"Found {len(result.knowledge)} new knowledge points", "green"))
     else:
-        print(colored("  Skipping page (no relevant content)", "yellow"))
+        print(colored("Skipping page (no relevant content)", "yellow"))
     
     updated_knowledge = current_knowledge + (result.knowledge if result.has_content else [])
     
@@ -104,20 +101,20 @@ def process_page(client: OpenAI, page_text: str, current_knowledge: list[str], p
 def load_existing_knowledge() -> list[str]:
     knowledge_file = BOOK_KNOWLEDGE_DIR / f"{BOOK_NAME}_knowledge.json"
     if knowledge_file.exists():
-        print(colored(" Loading existing knowledge base...", "cyan"))
+        print(colored("Loading existing knowledge base...", "cyan"))
         with open(knowledge_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            print(colored(f" Loaded {len(data['knowledge'])} existing knowledge points", "green"))
+            print(colored(f"Loaded {len(data['knowledge'])} existing knowledge points", "green"))
             return data['knowledge']
-    print(colored(" Starting with fresh knowledge base", "cyan"))
+    print(colored("Starting with fresh knowledge base", "cyan"))
     return []
 
 def analyze_knowledge_base(client: OpenAI, knowledge_base: list[str]) -> str:
     if not knowledge_base:
-        print(colored("\n  Skipping analysis: No knowledge points collected", "yellow"))
+        print(colored("\nSkipping analysis: No knowledge points collected", "yellow"))
         return ""
         
-    print(colored("\n Generating final book analysis...", "cyan"))
+    print(colored("\nGenerating final book analysis...", "cyan"))
     completion = client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -137,7 +134,7 @@ def analyze_knowledge_base(client: OpenAI, knowledge_base: list[str]) -> str:
         ]
     )
     
-    print(colored(" Analysis generated successfully!", "green"))
+    print(colored("Analysis generated successfully!", "green"))
     return completion.choices[0].message.content
 
 def setup_directories():
@@ -158,7 +155,7 @@ def setup_directories():
         if source_pdf.exists():
             # Copy the PDF instead of moving it
             shutil.copy2(source_pdf, PDF_PATH)
-            print(colored(f" Copied PDF to analysis directory: {PDF_PATH}", "green"))
+            print(colored(f"Copied PDF to analysis directory: {PDF_PATH}", "green"))
         else:
             raise FileNotFoundError(f"PDF file {PDF_NAME} not found")
 
@@ -186,15 +183,15 @@ Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 *Analysis generated using AI Book Analysis Tool*
 """
     
-    print(colored(f"\n Saving {'final' if is_final else 'interval'} analysis to markdown...", "cyan"))
+    print(colored(f"\nSaving {'final' if is_final else 'interval'} analysis to markdown...", "cyan"))
     with open(summary_path, 'w', encoding='utf-8') as f:  # Added encoding='utf-8'
         f.write(markdown_content)
     print(colored(f" Analysis saved to: {summary_path}", "green"))
 
 def print_instructions():
     print(colored("""
- PDF Book Analysis Tool 
----------------------------
+   PDF Book Analysis Tool 
+----------------------------
 1. Place your PDF in the same directory as this script
 2. Update PDF_NAME constant with your PDF filename
 3. The script will:
@@ -215,7 +212,7 @@ def main():
         print_instructions()
         input()
     except KeyboardInterrupt:
-        print(colored("\n Process cancelled by user", "red"))
+        print(colored("\nProcess cancelled by user", "red"))
         return
 
     setup_directories()
@@ -227,7 +224,7 @@ def main():
     pdf_document = fitz.open(PDF_PATH)
     pages_to_process = TEST_PAGES if TEST_PAGES is not None else pdf_document.page_count
     
-    print(colored(f"\n Processing {pages_to_process} pages...", "cyan"))
+    print(colored(f"\nProcessing {pages_to_process} pages...", "cyan"))
     for page_num in range(min(pages_to_process, pdf_document.page_count)):
         page = pdf_document[page_num]
         page_text = page.get_text()
@@ -240,17 +237,17 @@ def main():
             is_final_page = page_num + 1 == pages_to_process
             
             if is_interval and not is_final_page:
-                print(colored(f"\n Progress: {page_num + 1}/{pages_to_process} pages processed", "cyan"))
+                print(colored(f"\nProgress: {page_num + 1}/{pages_to_process} pages processed", "cyan"))
                 interval_summary = analyze_knowledge_base(client, knowledge_base)
                 save_summary(interval_summary, is_final=False)
         
         # Always generate final analysis on last page
         if page_num + 1 == pages_to_process:
-            print(colored(f"\n Final page ({page_num + 1}/{pages_to_process}) processed", "cyan"))
+            print(colored(f"\nFinal page ({page_num + 1}/{pages_to_process}) processed", "cyan"))
             final_summary = analyze_knowledge_base(client, knowledge_base)
             save_summary(final_summary, is_final=True)
     
-    print(colored("\n Processing complete! ", "green", attrs=['bold']))
+    print(colored("\nProcessing complete! ", "green", attrs=['bold']))
 
 if __name__ == "__main__":
     main()
